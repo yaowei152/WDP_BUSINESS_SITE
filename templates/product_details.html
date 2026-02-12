@@ -1,48 +1,64 @@
 {% extends "base.html" %}
-
 {% block title %}{{ product.title }} | Shop.co{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="product-details-container">
-        <div class="detail-image-wrapper">
-            <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.title }}" class="detail-image">
+<div class="container mt-4">
+    <div class="product-details-layout">
+        <div>
+            <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.title }}" class="detail-img">
         </div>
-
-        <div class="detail-info">
-            <h1 class="product-title">{{ product.title }}</h1>
-            <p class="detail-price">${{ "{:.2f}".format(product.cost) }}</p>
-            
-            <div class="detail-description">
-                <p>{{ product.description }}</p>
-                <p>Category: <strong>{{ product.category }}</strong></p>
-            </div>
-
-            <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-primary btn-block">Add to Cart</a>
+        <div>
+            <h1 class="detail-title">{{ product.title }}</h1>
+            <p class="detail-price">${{ "%.2f"|format(product.cost) }}</p>
+            <p class="detail-desc">{{ product.description }}</p>
+            <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn w-full">Add to Cart</a>
         </div>
     </div>
 
     <div class="reviews-section">
-        <h2>Customer Reviews ({{ product.reviews|length }})</h2>
-        
-        {% if product.reviews %}
-            <div class="reviews-list">
-                {% for review in product.reviews %}
-                <div class="review-card">
-                    <div class="review-header">
-                        <span class="review-user">{{ review.user_name }}</span>
-                        <div class="review-stars">
-                            {% for i in range(review.rating) %}<i class="fas fa-star"></i>{% endfor %}
-                            {% for i in range(5 - review.rating) %}<i class="far fa-star"></i>{% endfor %}
-                        </div>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="font-bold text-2xl">All Reviews <span class="text-muted text-lg">({{ total_reviews }})</span></h2>
+        </div>
+
+        <div class="review-summary">
+            <div class="rating-box">
+                <div class="rating-avg">{{ average_rating }}</div>
+                <div class="rating-stars">
+                    {% for i in range(average_rating|round|int) %}<i class="fas fa-star"></i>{% endfor %}
+                    {% for i in range(5 - average_rating|round|int) %}<i class="far fa-star"></i>{% endfor %}
+                </div>
+                <div class="rating-count">Based on {{ total_reviews }} reviews</div>
+            </div>
+            <div class="rating-bars">
+                {% for star in [5, 4, 3, 2, 1] %}
+                <div class="rating-bar-row">
+                    <span class="rating-label">{{ star }} stars</span>
+                    <div class="progress-bar-bg">
+                        {% set count = rating_counts[star] %}
+                        {% set percentage = (count / total_reviews * 100) if total_reviews > 0 else 0 %}
+                        <div class="progress-bar-fill" style="width: {{ percentage }}%;"></div>
                     </div>
-                    <p class="review-comment">{{ review.comment }}</p>
+                    <span class="rating-value">{{ count }}</span>
                 </div>
                 {% endfor %}
             </div>
-        {% else %}
-            <p class="text-muted">No reviews yet. Be the first to review!</p>
-        {% endif %}
+        </div>
+
+        <div class="review-list">
+            {% for review in reviews %}
+            <div class="review-item">
+                <div class="review-header">
+                    <span class="review-user">{{ review.user_name }} <i class="fas fa-check-circle text-green-500 ml-1" style="font-size: 0.8rem;"></i></span>
+                    <span class="review-date">Posted on {{ review.date_posted.strftime('%B %d, %Y') }}</span>
+                </div>
+                <div class="rating-stars" style="font-size: 1rem;">
+                    {% for i in range(review.rating) %}<i class="fas fa-star"></i>{% endfor %}
+                    {% for i in range(5 - review.rating) %}<i class="far fa-star"></i>{% endfor %}
+                </div>
+                <p class="review-comment">{{ review.comment }}</p>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}

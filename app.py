@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -40,11 +40,28 @@ class Product(db.Model):
     is_popular = db.Column(db.Boolean, default=False)
     reviews = db.relationship('Review', backref='product', lazy=True)
 
+    def get_average_rating(self):
+        if not self.reviews:
+            return 0
+        total = sum([review.rating for review in self.reviews])
+        return round(total / len(self.reviews), 1)
+    
+    def get_rating_counts(self):
+        counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+        if not self.reviews:
+            return counts, 0
+        for review in self.reviews:
+            counts[review.rating] += 1
+        total_reviews = len(self.reviews)
+        return counts, total_reviews
+
+
 class Review(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     rating = db.Column(db.Integer, nullable=False)
     comment = db.Column(db.Text, nullable=False)
     user_name = db.Column(db.String(80), nullable=False)
+    date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
 
 class Order(db.Model):
@@ -107,7 +124,11 @@ def all_products():
 def product_details(product_id):
     if 'user_id' not in session: return redirect(url_for('login'))
     product = Product.query.get_or_404(product_id)
-    return render_template('product_details.html', product=product)
+    reviews = Review.query.filter_by(product_id=product.id).order_by(Review.date_posted.desc()).all()
+    rating_counts, total_reviews = product.get_rating_counts()
+    average_rating = product.get_average_rating()
+    
+    return render_template('product_details.html', product=product, reviews=reviews, rating_counts=rating_counts, total_reviews=total_reviews, average_rating=average_rating)
 
 # --- Cart & Checkout ---
 @app.route('/add_to_cart/<int:product_id>')
@@ -263,6 +284,12 @@ def populate_db():
     for p in products_data:
         product = Product(**p)
         db.session.add(product)
+        
+        # Add sample reviews
+        review1 = Review(rating=5, comment="Excellent quality! Fits perfectly.", user_name="John D.", product=product, date_posted=datetime(2023, 10, 25))
+        review2 = Review(rating=4, comment="Good product, fast shipping.", user_name="Sarah M.", product=product, date_posted=datetime(2023, 11, 1))
+        db.session.add_all([review1, review2])
+        
     db.session.commit()
 
 if __name__ == '__main__':

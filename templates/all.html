@@ -1,75 +1,25 @@
 {% extends "base.html" %}
-
 {% block title %}Shop All | Shop.co{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1 class="page-title">
-        {% if search_query %}
-            Results for "{{ search_query }}"
-        {% else %}
-            All Products
-        {% endif %}
+<div class="container mt-4">
+    <h1 class="font-bold text-3xl mb-4">
+        {% if search_query %}Results for "{{ search_query }}"{% else %}All Products{% endif %}
     </h1>
 
-    <div class="shop-layout">
-        <aside class="filter-sidebar">
-            <form action="{{ url_for('all_products') }}" method="GET">
-                {% if search_query %}
-                <input type="hidden" name="q" value="{{ search_query }}">
-                {% endif %}
-
-                <div class="filter-section">
-                    <h3 class="filter-title">Category</h3>
-                    <div class="filter-options">
-                        {% for category in all_categories %}
-                        <label>
-                            <input type="checkbox" name="category" value="{{ category }}" 
-                                   {% if category in current_categories %}checked{% endif %}>
-                            {{ category }}
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="filter-section">
-                    <h3 class="filter-title">Max Price: $<span id="price-val">{{ max_price }}</span></h3>
-                    <div class="price-slider-container">
-                        <input type="range" name="max_price" min="0" max="500" value="{{ max_price }}" 
-                               oninput="document.getElementById('price-val').textContent = this.value">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
-            </form>
-        </aside>
-
-        <div class="product-list">
-            {% if products %}
-                <div class="product-grid">
-                    {% for product in products %}
-                    <div class="product-card">
-                        <a href="{{ url_for('product_details', product_id=product.id) }}" class="product-card-link">
-                            <div class="product-image-wrapper">
-                                <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.title }}" class="product-image">
-                            </div>
-                            <div class="product-info">
-                                <div>
-                                    <h3 class="product-title">{{ product.title }}</h3>
-                                    <p class="product-price">${{ "{:.2f}".format(product.cost) }}</p>
-                                </div>
-                                <object>
-                                    <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-secondary btn-sm btn-block">Add to Cart</a>
-                                </object>
-                            </div>
-                        </a>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p>No products found matching your criteria.</p>
-            {% endif %}
-        </div>
+    <div class="product-grid">
+        {% for product in products %}
+        <a href="{{ url_for('product_details', product_id=product.id) }}" class="card">
+            <div class="card-img-wrapper">
+                <img src="{{ url_for('static', filename='images/' ~ product.image) }}" alt="{{ product.title }}" class="card-img">
+            </div>
+            <h3 class="card-title">{{ product.title }}</h3>
+             <div class="rating-stars text-sm mb-1">
+                {% for i in range(5) %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+            </div>
+            <p class="card-price">${{ "%.2f"|format(product.cost) }}</p>
+        </a>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
