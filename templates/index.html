@@ -1,53 +1,53 @@
 {% extends "base.html" %}
 
-{% block title %}Shop.co | Home{% endblock %}
+{% block title %}Home | Shop.co{% endblock %}
 
 {% block content %}
-<section class="hero-section animate-up">
+<section class="hero" style="background: var(--primary-color); color: white; padding: 5rem 0; text-align: center; margin-bottom: 3rem;">
     <div class="container">
-        <h1 class="display-3 font-weight-bold">Level Up Your Wardrobe</h1>
-        <p class="lead">Discover the latest trends in fashion. Premium quality, sustainable materials.</p>
-        <a href="{{ url_for('newarrivals') }}" class="btn btn-primary btn-lg mt-3 shadow">Shop New Collection</a>
+        <h1 style="color: white; font-size: 3rem;">Welcome to Shop.co</h1>
+        <p style="font-size: 1.2rem; margin-bottom: 2rem;">Discover the latest trends in fashion.</p>
+        <a href="{{ url_for('all_products') }}" class="btn" style="background: white; color: var(--primary-color);">Shop Now</a>
     </div>
 </section>
 
-<section class="container mb-5 animate-up">
-    <h2 class="text-center mb-5">Trending Now</h2>
-    <div class="row">
+<div class="container">
+    <h2 class="page-title">Trending Now</h2>
+    <div class="product-grid">
         {% for item in trending_now %}
-        <div class="col-md-3 col-6 mb-4">
-            <div class="card h-100">
-                <img src="{{ url_for('static', filename=item.img) }}" class="card-img-top product-image" alt="{{ item.alt }}">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title h6">{{ item.title }}</h5>
-                    <p class="card-text text-muted">{{ item.price }}</p>
-                    <a href="{{ item.link }}" class="btn btn-outline-dark btn-sm mt-auto">View Item</a>
+        <div class="product-card">
+            <a href="{{ url_for('product_details', product_id=item.id) }}" class="product-card-link">
+                <div class="product-image-wrapper">
+                    <img src="{{ url_for('static', filename='images/' + item.img) }}" alt="{{ item.title }}" class="product-image">
                 </div>
+                <div class="product-info">
+                    <div>
+                        <h3 class="product-title">{{ item.title }}</h3>
+                        <p class="product-price">{{ item.price }}</p>
+                    </div>
+                    <object>
+                        <a href="{{ url_for('add_to_cart', product_id=item.id) }}" class="btn btn-secondary btn-sm btn-block">Add to Cart</a>
+                    </object>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h2 class="page-title" style="margin-top: 4rem;">Shop Collections</h2>
+    <div class="product-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+        {% for cat in top_categories %}
+        <div class="product-card" style="text-align: left;">
+             <div class="product-image-wrapper" style="height: 200px;">
+                <img src="{{ url_for('static', filename='images/' + cat.img) }}" alt="{{ cat.title }}" class="product-image">
+            </div>
+            <div class="product-info" style="align-items: flex-start; text-align: left;">
+                <h3 class="product-title" style="font-size: 1.5rem;">{{ cat.title }}</h3>
+                <p style="margin-bottom: 1.5rem; color: var(--text-light);">{{ cat.desc }}</p>
+                <a href="{{ cat.link }}" class="btn btn-primary btn-sm">Explore</a>
             </div>
         </div>
         {% endfor %}
     </div>
-</section>
-
-<section class="bg-white py-5">
-    <div class="container">
-        <div class="row text-center">
-            <div class="col-md-4 mb-4 animate-up">
-                <i class="fas fa-truck fa-3x mb-3 text-primary"></i>
-                <h4>Fast Delivery</h4>
-                <p class="text-muted">Get your order in 3-5 days.</p>
-            </div>
-            <div class="col-md-4 mb-4 animate-up">
-                <i class="fas fa-undo fa-3x mb-3 text-primary"></i>
-                <h4>Easy Returns</h4>
-                <p class="text-muted">30-day money back guarantee.</p>
-            </div>
-            <div class="col-md-4 mb-4 animate-up">
-                <i class="fas fa-headset fa-3x mb-3 text-primary"></i>
-                <h4>24/7 Support</h4>
-                <p class="text-muted">We are here to help you.</p>
-            </div>
-        </div>
-    </div>
-</section>
+</div>
 {% endblock %}

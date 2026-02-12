@@ -1,22 +1,21 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
 import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+# Ensure instance path exists for the database file
+instance_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance')
+if not os.path.exists(instance_path):
+    os.makedirs(instance_path)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "site.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = "supersecretkey"
 db = SQLAlchemy(app)
 
 # ---------------- Models ----------------
-class Feedback(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -29,98 +28,166 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-class Product:
-    def __init__(self, id, title, cost, image, category, is_popular=False):
-        self.id = id
-        self.title = title
-        self.cost = cost
-        self.image = image
-        self.category = category
-        self.is_popular = is_popular
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    cost = db.Column(db.Float, nullable=False)
+    image = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    is_popular = db.Column(db.Boolean, default=False)
+    # Relationship to reviews
+    reviews = db.relationship('Review', backref='product', lazy=True)
 
-products = [
-    Product(1, "Casual T-Shirt", 100, "tshirt1.png", "T-shirts", is_popular=True),
-    Product(2, "Long sleeves shirt", 150, "shirt1.png", "Shirts", is_popular=False),
-    Product(3, "Graphic T-shirt", 120, "tshirt2.png", "T-shirts", is_popular=True),
-    Product(4, "Buttoned up shirt", 210, "shirt2.png", "Shirts", is_popular=False),
-    Product(5, "Classic hoodie", 180, "hoodie1.png", "Hoodie", is_popular=True),
-    Product(6, "Simple shorts", 250, "shorts1.png", "Shorts", is_popular=False)
-]
+class Review(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    rating = db.Column(db.Integer, nullable=False)
+    comment = db.Column(db.Text, nullable=False)
+    user_name = db.Column(db.String(80), nullable=False) # Simplified for now
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+
+class Feedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+
+# ---------------- Helper to Populate DB ----------------
+def populate_db():
+    if Product.query.first():
+        return # DB already populated
+
+    products_data = [
+        {"title": "Casual T-Shirt", "cost": 100, "image": "tshirt1.png", "category": "T-shirts", "is_popular": True, "description": "A comfortable, everyday t-shirt made from soft cotton."},
+        {"title": "Long sleeves shirt", "cost": 150, "image": "shirt1.png", "category": "Shirts", "is_popular": False, "description": "A stylish long-sleeve shirt suitable for casual or semi-formal occasions."},
+        {"title": "Graphic T-shirt", "cost": 120, "image": "tshirt2.png", "category": "T-shirts", "is_popular": True, "description": "Stand out with this unique graphic tee featuring a bold design."},
+        {"title": "Buttoned up shirt", "cost": 210, "image": "shirt2.png", "category": "Shirts", "is_popular": False, "description": "A classic button-up shirt made from high-quality fabric. Perfect for the office."},
+        {"title": "Classic hoodie", "cost": 180, "image": "hoodie1.png", "category": "Hoodie", "is_popular": True, "description": "Stay warm and cozy in this classic pullover hoodie with a front pocket."},
+        {"title": "Simple shorts", "cost": 250, "image": "shorts1.png", "category": "Shorts", "is_popular": False, "description": "Comfortable and versatile shorts, perfect for warm weather or lounging."}
+    ]
+
+    for p_data in products_data:
+        product = Product(**p_data)
+        db.session.add(product)
+        db.session.commit() # Commit to get the ID
+
+        # Add some dummy reviews for each product
+        review1 = Review(rating=random.randint(4, 5), comment="Great product, fits well!", user_name="Alex", product_id=product.id)
+        review2 = Review(rating=random.randint(3, 4), comment="Good quality, but shipping was slow.", user_name="Sam", product_id=product.id)
+        db.session.add_all([review1, review2])
+    
+    db.session.commit()
+    print("Database populated with dummy data.")
+
+
+# ---------------- Context Processor ----------------
+# This makes the cart length available to the navbar in base.html on every page
+@app.context_processor
+def inject_cart_length():
+    cart = session.get('cart', [])
+    return dict(cart_length=sum(item.get('quantity', 0) for item in cart))
+
 
 # ---------------- Routes ----------------
 @app.route('/')
 def home():
-    # CUSTOMER SECURITY CHECK:
-    # If not logged in, redirect to the customer login page
+    # CUSTOMER SECURITY CHECK
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
+    # Fetch trending products from DB
+    trending_products = Product.query.filter_by(is_popular=True).limit(4).all()
+
+    # Prepare data for the template (adapter to match old structure if needed, or update template)
+    trending_now = []
+    for p in trending_products:
+        trending_now.append({
+            'id': p.id,
+            'img': p.image,
+            'title': p.title,
+            'price': f"${p.cost:.2f}"
+        })
+
     top_categories = [
-        {'title': "Cotton Collection", 'desc': "comfortable and breathable", 'link': "new-arrivals", 'img': 'uniqloshirt.avif'},
-        {'title': "Men's Fashion", 'desc': "Classic and contemporary designs", 'link': "shop?category=mens", 'img': 'mens.jpg'},
-        {'title': "Women's Fashion", 'desc': "Elegant and trendy pieces", 'link': "shop?category=womens", 'img': 'womens.jpg'},
+        {'title': "Cotton Collection", 'desc': "Comfortable and breathable.", 'link': url_for('newarrivals'), 'img': 'uniqloshirt.avif'},
+        {'title': "Men's Fashion", 'desc': "Classic and contemporary designs.", 'link': url_for('all_products', category='Shirts'), 'img': 'mens.jpg'},
+        {'title': "Women's Fashion", 'desc': "Elegant and trendy pieces.", 'link': url_for('all_products'), 'img': 'womens.jpg'},
     ]
 
-    trending_now = [
-        {'img': 'shirt1.jpg', 'alt': 'Basketball graphic tee', 'title': 'Graphic tee', 'price': '$12.99', 'link': "#"},
-        {'img': 'uniqloshirt.avif', 'alt': 'Broadcloth shirt long sleeve', 'title': 'Broadcloth shirt long sleeve', 'price': '$35', 'link': "#"},
-        {'img': 'womendress.avif', 'alt': 'Linen tiered dress', 'title': 'Linen tiered dress', 'price': '$50.00', 'link': "#"},
-        {'img': 'sweatshirt.avif', 'alt': 'Cotton sweatshirt', 'title': 'Cotton sweatshirt', 'price': '$32.99', 'link': "#"},
-    ]
+    return render_template('index.html', top_categories=top_categories, trending_now=trending_now)
 
-    quick_links = [
-        {'title': "Customer Service", 'desc': "Get help with your orders", 'link': "contact"},
-        {'title': "Promotions", 'desc': "Check out our latest deals", 'link': "promotions"},
-    ]
 
-    return render_template('index.html',
-                           top_categories=top_categories,
-                           trending_now=trending_now,
-                           quick_links=quick_links)
+@app.route('/product/<int:product_id>')
+def product_details(product_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    product = Product.query.get_or_404(product_id)
+    return render_template('product_details.html', product=product)
+
 
 @app.route('/all')
 def all_products():
     if 'user_id' not in session:
         return redirect(url_for('login'))
         
+    search_query = request.args.get('q', '').strip()
     selected_categories = request.args.getlist("category")
     max_price = request.args.get("max_price", default=9999, type=int)
     
-    filtered_products = [p for p in products if (not selected_categories or p.category in selected_categories) and p.cost <= max_price]
-    return render_template('all.html', products=filtered_products)
+    query = Product.query
+
+    # Apply Search Filter
+    if search_query:
+        query = query.filter(Product.title.ilike(f'%{search_query}%') | Product.description.ilike(f'%{search_query}%'))
+
+    # Apply Category Filter
+    if selected_categories:
+        query = query.filter(Product.category.in_(selected_categories))
+    
+    # Apply Price Filter
+    query = query.filter(Product.cost <= max_price)
+
+    filtered_products = query.all()
+
+    # Get all unique categories for the filter sidebar
+    all_categories = [r.category for r in db.session.query(Product.category).distinct()]
+
+    return render_template('all.html', products=filtered_products, all_categories=all_categories, current_categories=selected_categories, max_price=max_price, search_query=search_query)
+
 
 @app.route('/popular')
 def popular():
     if 'user_id' not in session:
         return redirect(url_for('login'))
         
-    popular_products = [p for p in products if p.is_popular]
+    popular_products = Product.query.filter_by(is_popular=True).all()
     return render_template('popular.html', products=popular_products)
+
 
 @app.route('/newarrivals')
 def newarrivals():
     if 'user_id' not in session:
         return redirect(url_for('login'))
         
-    new_products = products[-2:]
+    # Assuming higher IDs are newer. Get last 4.
+    new_products = Product.query.order_by(Product.id.desc()).limit(4).all()
     return render_template('newarrivals.html', products=new_products)
+
 
 @app.route('/add_to_cart/<int:product_id>')
 def add_to_cart(product_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
         
-    product = next((p for p in products if p.id == product_id), None)
+    product = Product.query.get(product_id)
     
     if product:
-        if 'cart' not in session:
-            session['cart'] = []
-        
-        cart = session['cart']
+        cart = session.get('cart', [])
         found = False
         for item in cart:
-            if isinstance(item, dict) and 'id' in item and item['id'] == product_id:
-                item['quantity'] = item.get('quantity', 0) + 1
+            if item['id'] == product_id:
+                item['quantity'] += 1
                 found = True
                 break
         
@@ -128,15 +195,17 @@ def add_to_cart(product_id):
             cart.append({
                 'id': product.id,
                 'title': product.title,
-                'price': float(product.cost),
+                'price': product.cost,
                 'image': product.image,
                 'quantity': 1
             })
         
         session['cart'] = cart
-        return redirect(url_for('cart'))
+        flash(f'{product.title} added to cart!', 'success')
+        return redirect(request.referrer or url_for('all_products'))
     
     return redirect(url_for('all_products'))
+
 
 @app.route('/cart')
 def cart():
@@ -145,9 +214,8 @@ def cart():
         
     cart_items = session.get('cart', [])
     total = sum(item['price'] * item['quantity'] for item in cart_items)
-    for item in cart_items:
-        item['subtotal'] = item['price'] * item['quantity']
     return render_template("cart.html", cart=cart_items, total=total)
+
 
 @app.route('/update_cart/<int:product_id>', methods=['POST'])
 def update_cart(product_id):
@@ -157,50 +225,30 @@ def update_cart(product_id):
     action = request.form.get('action')
     cart = session.get('cart', [])
     
-    for i, item in enumerate(cart):
+    new_cart = []
+    for item in cart:
         if item['id'] == product_id:
             if action == 'increase':
                 item['quantity'] += 1
+                new_cart.append(item)
             elif action == 'decrease':
-                if item['quantity'] > 1:
-                    item['quantity'] -= 1
-                else:
-                    cart.pop(i)
-                    break
+                item['quantity'] -= 1
+                if item['quantity'] > 0:
+                    new_cart.append(item)
             elif action == 'remove':
-                cart.pop(i)
-                break
-            break
+                pass # Do not append, effectively removing
+        else:
+            new_cart.append(item)
     
-    session['cart'] = cart
+    session['cart'] = new_cart
     return redirect(url_for('cart'))
 
-@app.route('/update_quantity/<int:product_id>', methods=['POST'])
-def update_quantity(product_id):
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'error': 'Unauthorized'})
-
-    try:
-        new_quantity = int(request.form.get('quantity', 1))
-        cart = session.get('cart', [])
-        
-        for item in cart:
-            if item['id'] == product_id:
-                if new_quantity > 0:
-                    item['quantity'] = new_quantity
-                else:
-                    cart = [i for i in cart if i['id'] != product_id]
-                break
-        
-        session['cart'] = cart
-        return jsonify({'success': True, 'message': 'Quantity updated'})
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/clear_cart')
 def clear_cart():
     session['cart'] = []
     return redirect(url_for('cart'))
+
 
 @app.route('/checkout')
 def checkout():
@@ -213,21 +261,20 @@ def checkout():
     grand_total = total + tax
     return render_template('checkout.html', cart=cart_items, total=total, tax=tax, grand_total=grand_total)
 
+
 @app.route('/confirmation', methods=['GET', 'POST'])
 def confirmation():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        cart_items = session.get('cart', [])
-        total = sum(item['price'] * item['quantity'] for item in cart_items)
         session['cart'] = []
-        return render_template('confirmation.html', total=total, order_number=random.randint(100000, 999999))
+        return render_template('confirmation.html', order_number=random.randint(100000, 999999))
     return redirect(url_for('cart'))
+
 
 @app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    thank_you_message = None
     if request.method == 'POST':
         name = request.form['name']
         email = request.form['email']
@@ -236,34 +283,16 @@ def contact():
         feedback_entry = Feedback(name=name, email=email, message=message)
         db.session.add(feedback_entry)
         db.session.commit()
+        flash(f"Thank you for your feedback, {name}!", 'success')
+        return redirect(url_for('contact'))
 
-        thank_you_message = f"Thank you for your feedback, {name}! We appreciate your message."
+    return render_template('contact.html')
 
-    return render_template('contact.html', thank_you_message=thank_you_message)
 
-@app.route('/submissions')
-def submissions():
-    # Protected: Only for Admins
-    if not session.get('is_admin'):
-        return redirect(url_for('admin_login'))
+# ---------------- Authentication & Admin ----------------
+# (Keep your existing auth/admin routes here: signup, login, logout, admin_login, submissions, clear_feedback, etc.)
+# ... [Insert your existing Auth/Admin routes from previous step here] ...
 
-    all_feedback = Feedback.query.all()
-    return render_template('submissions.html', feedbacks=all_feedback)
-
-@app.route('/clear-feedback', methods=['POST'])
-def clear_feedback():
-    if not session.get('is_admin'):
-        return redirect(url_for('admin_login'))
-
-    Feedback.query.delete()
-    db.session.commit()
-    if os.path.exists('feedback.txt'):
-        open('feedback.txt', 'w').close() 
-    return redirect(url_for('submissions'))
-
-# ---------------- Authentication ----------------
-
-# 1. CUSTOMER SIGNUP
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if 'user_id' in session:
@@ -287,7 +316,6 @@ def signup():
 
     return render_template('signup.html')
 
-# 2. CUSTOMER LOGIN
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session:
@@ -300,43 +328,20 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             session['user_id'] = user.id
-            # SUCCESS: Explicit redirect to home
             return redirect(url_for('home'))
         else:
             return render_template('login.html', error="Invalid Username or Password")
 
     return render_template('login.html')
 
-# 3. ADMIN LOGIN
-@app.route('/admin/login', methods=['GET', 'POST'])
-def admin_login():
-    if session.get('is_admin'):
-         return "Admin already logged in. Panel pending integration."
-
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        if username == 'admin' and password == '123':
-            session['is_admin'] = True
-            return "<h2>Admin Login Successful.</h2><p>Waiting for admin panel integration...</p><a href='/admin/logout'>Logout</a>"
-        else:
-            return render_template('admin_login.html', error="Invalid Admin Credentials")
-
-    return render_template('admin_login.html')
-
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('login'))
 
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('is_admin', None)
-    return redirect(url_for('admin_login'))
-
 # ---------------- Run ----------------
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        populate_db() # Populate DB with initial data if empty
     app.run(debug=True)

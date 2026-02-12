@@ -1,74 +1,29 @@
 {% extends "base.html" %}
 
-{% block title %}Popular Items | Shop.co{% endblock %}
+{% block title %}Popular | Shop.co{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row">
-        
-        <aside class="col-lg-3 mb-4">
-            <div class="sidebar sticky-top" style="top: 100px;">
-                <h4 class="font-weight-bold mb-4">Filter By</h4>
-                
-                <form method="GET" action="{{ url_for('all_products') }}">
-                    <div class="filter-group mb-4">
-                        <h6 class="font-weight-bold mb-3">Category</h6>
-                        {% for cat in ['T-shirts', 'Shorts', 'Shirts', 'Hoodie', 'Jeans'] %}
-                        <div class="custom-control custom-checkbox mb-2">
-                            <input type="checkbox" class="custom-control-input" id="pop-cat-{{ loop.index }}" name="category" value="{{ cat }}">
-                            <label class="custom-control-label" for="pop-cat-{{ loop.index }}">{{ cat }}</label>
-                        </div>
-                        {% endfor %}
+<div class="container">
+    <h2 class="page-title">Popular Products</h2>
+    <div class="product-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <a href="{{ url_for('product_details', product_id=product.id) }}" class="product-card-link">
+                <div class="product-image-wrapper">
+                    <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.title }}" class="product-image">
+                </div>
+                <div class="product-info">
+                    <div>
+                        <h3 class="product-title">{{ product.title }}</h3>
+                        <p class="product-price">${{ product.cost }}</p>
                     </div>
-                    
-                    <div class="filter-group mb-4">
-                        <h6 class="font-weight-bold mb-2">Price Limit</h6>
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="text-muted small">$0</span>
-                            <span class="font-weight-bold text-primary">$<span id="priceOutput">300</span></span>
-                        </div>
-                        <input type="range" class="custom-range" name="max_price" min="0" max="300" value="300" oninput="document.getElementById('priceOutput').innerText = this.value">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-block rounded-pill">Apply Filters</button>
-                </form>
-            </div>
-        </aside>
-
-        <main class="col-lg-9">
-            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-                <h2 class="font-weight-bold m-0">Popular Items</h2>
-                <span class="text-muted small">{{ products|length }} results</span>
-            </div>
-
-            <div class="row">
-                {% if products %}
-                    {% for product in products %}
-                    <div class="col-md-4 col-sm-6 mb-4 animate-up">
-                        <div class="product-card h-100 d-flex flex-column">
-                            <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="overflow-hidden rounded-top">
-                                <img src="{{ url_for('static', filename='images/' ~ product.image) }}" 
-                                     alt="{{ product.title }}"
-                                     class="product-image transition-zoom">
-                            </a>
-                            <div class="p-3 d-flex flex-column flex-grow-1 text-center">
-                                <h5 class="card-title h6 mb-2">{{ product.title }}</h5>
-                                <p class="price text-primary font-weight-bold mb-3">${{ product.cost }}</p>
-                                <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-outline-dark btn-sm mt-auto w-100">
-                                    Add to Cart
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="col-12 text-center py-5">
-                        <h4 class="text-muted">No popular items found right now.</h4>
-                    </div>
-                {% endif %}
-            </div>
-        </main>
-
+                    <object>
+                        <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-secondary btn-sm btn-block">Add to Cart</a>
+                    </object>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
