@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Shopping Cart - MyStore</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/allstyle.css') }}">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .cart-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .cart-header {
+            background: linear-gradient(135deg, #8e9fea 0%, #4a4ae8 100%);
+            color: white;
+            padding: 2rem 0;
+            border-radius: 10px 10px 0 0;
+        }
+        .cart-item {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        .cart-item:hover {
+            transform: translateY(-2px);
+        }
+        .product-image {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .quantity-input {
+            width: 70px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 5px;
+        }
+        .btn-quantity {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .summary-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 20px;
+        }
+        .empty-cart {
+            text-align: center;
+            padding: 4rem 0;
+        }
+        .empty-cart-icon {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 1rem;
+        }
+        .continue-shopping-btn {
+            background: linear-gradient(135deg, #8e9fea 0%, #4a4ae8 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: 500;
+        }
+        .checkout-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            width: 100%;
+        }
+        .remove-btn {
+            color: #dc3545;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        .remove-btn:hover {
+            color: #c82333;
+            text-decoration: underline;
+        }
+        .price-highlight {
+            color: #28a745;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .subtotal {
+            font-weight: 600;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/_navbar.html' %}
+    
+    <div class="container py-4 cart-container">
+        <!-- Cart Header -->
+        <div class="cart-header text-center mb-4">
+            <h1 class="display-4 mb-3">Your Shopping Cart</h1>
+            <p class="lead mb-0">{{ cart|length }} item{% if cart|length != 1 %}s{% endif %} in your cart</p>
+        </div>
+        
+        {% if cart %}
+        <div class="row">
+            <!-- Cart Items Section -->
+            <div class="col-lg-8 mb-4">
+                {% for item in cart %}
+                <div class="cart-item">
+                    <div class="row align-items-center">
+                        <!-- Product Image -->
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <img src="{{ url_for('static', filename='images/' + item.image) }}" 
+                                 alt="{{ item.title }}" 
+                                 class="product-image img-fluid">
+                        </div>
+                        
+                        <!-- Product Details -->
+                        <div class="col-md-9">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5 class="mb-2">{{ item.title }}</h5>
+                                    <p class="text-muted mb-2">SKU: {{ item.id }}</p>
+                                    <p class="price-highlight mb-3">${{ "%.2f"|format(item.price) }}</p>
+                                </div>
+                                
+                                <!-- Quantity Controls -->
+                                <div class="col-md-3">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <form action="{{ url_for('update_cart', product_id=item.id) }}" method="POST" class="mr-2">
+                                            <input type="hidden" name="action" value="decrease">
+                                            <button type="submit" class="btn btn-outline-secondary btn-quantity">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                        </form>
+                        
+                                        <input type="number" 
+                                               value="{{ item.quantity }}" 
+                                               min="1" 
+                                               class="quantity-input"
+                                               data-product-id="{{ item.id }}"
+                                               onchange="updateQuantity({ item_id }, this.value)">
+                        
+                                        <form action="{{ url_for('update_cart', product_id=item.id) }}" method="POST" class="ml-2">
+                                            <input type="hidden" name="action" value="increase">
+                                            <button type="submit" class="btn btn-outline-secondary btn-quantity">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <p class="subtotal">Subtotal: ${{ "%.2f"|format(item.price * item.quantity) }}</p>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="col-md-3 text-right">
+                                  <form action="{{ url_for('update_cart', product_id=item.id) }}" method="POST" 
+                                        onsubmit="return confirm('Remove this item from cart?');"
+                                        class="mt-5">  <!-- Added mt-5 for large top margin -->
+                                      <input type="hidden" name="action" value="remove">
+                                      <button type="submit" class="remove-btn">
+                                        <i class="fas fa-trash-alt"></i> Remove
+                                      </button>
+                                   </form>
+    
+                                   <div class="mt-3">
+                                      <a href="{{ url_for('all_products') }}" class="btn btn-outline-primary btn-sm">
+                                         <i class="fas fa-heart"></i> Save for later
+                                      </a>
+                                 </div>
+                               </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Continue Shopping -->
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('all_products') }}" class="btn continue-shopping-btn">
+                        <i class="fas fa-arrow-left"></i> Continue Shopping
+                    </a>
+                    <a href="{{ url_for('clear_cart') }}" class="btn btn-outline-danger ml-2" 
+                       onclick="return confirm('Clear entire cart?');">
+                        <i class="fas fa-trash"></i> Clear Cart
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Order Summary -->
+            <div class="col-lg-4">
+                <div class="summary-card">
+                    <h4 class="mb-4"><i class="fas fa-receipt"></i> Order Summary</h4>
+                    
+                    <!-- Summary Details -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal ({{ cart|length }} items)</span>
+                            <span>${{ "%.2f"|format(total) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Shipping</span>
+                            <span class="text-success">Free</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax</span>
+                            <span>${{ "%.2f"|format(total * 0.08) }}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total</strong>
+                            <strong class="price-highlight">${{ "%.2f"|format(total * 1.08) }}</strong>
+                        </div>
+                        
+                        <!-- Promo Code -->
+                        <div class="mb-4">
+                            <label for="promoCode" class="form-label">Promo Code</label>
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="promoCode"
+                                       minlength="8"
+                                       maxlength="12" 
+                                       pattern="[A-Z0-9]+"
+                                       placeholder="Enter code"
+                                       required
+                                >
+                                <div class="invalid-feedback">
+                                    Please enter valid code. (8-12 uppercase alphabets or numbers)
+                                </div>
+                                <div class="valid-feedback">
+                                    Promo code applied successfully!
+                                </div>
+                                <button class="btn btn-outline-secondary" type="button">Apply</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Checkout Button -->
+                        <a href="{{ url_for('checkout') }}" class="btn checkout-btn mb-3">
+                            <i class="fas fa-lock"></i> Proceed to Checkout
+                        </a>
+                        
+                        <!-- Payment Methods -->
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Secure payment with</small>
+                            <div class="mt-2">
+                                <i class="fab fa-cc-visa fa-2x text-primary mx-1"></i>
+                                <i class="fab fa-cc-mastercard fa-2x text-danger mx-1"></i>
+                                <i class="fab fa-cc-amex fa-2x text-info mx-1"></i>
+                                <i class="fab fa-cc-paypal fa-2x text-primary mx-1"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Security Info -->
+                        <div class="alert alert-info mt-4">
+                            <i class="fas fa-shield-alt"></i>
+                            <small>Your payment information is encrypted and secure. We don't store credit card details.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty Cart State -->
+        <div class="empty-cart">
+            <div class="empty-cart-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <h2 class="mb-3">Your cart is empty</h2>
+            <p class="text-muted mb-4">Looks like you haven't added any items to your cart yet.</p>
+            <a href="{{ url_for('all_products') }}" class="btn continue-shopping-btn">
+                <i class="fas fa-store"></i> Start Shopping
+            </a>
+            <div class="mt-4">
+                <p class="text-muted">Need inspiration?</p>
+                <a href="{{ url_for('popular') }}" class="btn btn-outline-primary mx-1">Popular Items</a>
+                <a href="{{ url_for('newarrivals') }}" class="btn btn-outline-success mx-1">New Arrivals</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Footer Section -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>MyStore</h5>
+                    <p>Quality products at great prices. Shop with confidence.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="{{ url_for('all_products') }}" class="text-white">All Products</a></li>
+                        <li><a href="{{ url_for('popular') }}" class="text-white">Popular Items</a></li>
+                        <li><a href="{{ url_for('newarrivals') }}" class="text-white">New Arrivals</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Need Help?</h5>
+                    <p><i class="fas fa-envelope"></i> support@mystore.com</p>
+                    <p><i class="fas fa-phone"></i> (123) 456-7890</p>
+                </div>
+            </div>
+            <hr class="bg-light">
+            <div class="text-center">
+                <small>&copy; 2024 MyStore. All rights reserved.</small>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- JavaScript -->
+    <script>
+        // Update quantity via AJAX
+        function updateQuantity(productId, quantity) {
+            if (quantity < 1) {
+                alert('Quantity must be at least 1');
+                return;
+            }
+            
+            fetch('/update_quantity/' + productId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'quantity=' + quantity
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Refresh to show updated totals
+                } else {
+                    alert('Error updating quantity: ' + data.error);
+                }
+            });
+        }
+        
+        // Smooth animations
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate cart items on load
+            const cartItems = document.querySelectorAll('.cart-item');
+            cartItems.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const promoInput = document.getElementById('promoCode');
+            const applyBtn = document.getElementById('applyPromoBtn');
+            const promoStatus = document.getElementById('promoStatus');
+    
+            // Real-time validation as user types
+            promoInput.addEventListener('input', function() {
+            validatePromoCode();
+            });
+    
+            // Apply button click handler
+            applyBtn.addEventListener('click', function() {
+                if (validatePromoCode()) {
+                    applyPromoCode();
+                }
+            });
+    
+            // Enter key support
+            promoInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                if (validatePromoCode()) {
+                    applyPromoCode();
+                }
+            }
+        });
+    
+    function validatePromoCode() {
+        const code = promoInput.value.trim();
+        const pattern = /^[A-Z0-9]{8,12}$/;
+        
+        // Clear previous validation states
+        promoInput.classList.remove('is-valid', 'is-invalid');
+        promoStatus.classList.add('d-none');
+        
+        // Check if empty
+        if (code === '') {
+            promoInput.classList.add('is-invalid');
+            return false;
+        }
+        
+        // Validate pattern
+        if (!pattern.test(code)) {
+            promoInput.classList.add('is-invalid');
+            return false;
+        }
+        
+        promoInput.classList.add('is-valid');
+        return true;
+    }
+    
+    function applyPromoCode() {
+        const code = promoInput.value.trim();
+        
+        // Example: Simulate API call or validation
+        const validPromoCodes = {
+            'WELCOME10': 10,
+            'SAVE20NOW': 20,
+            'SUMMER2025': 15,
+            'FREESHIP': 'Free Shipping'
+        };
+        
+        // Check if code exists in our "database"
+        if (validPromoCodes[code]) {
+            const discount = validPromoCodes[code];
+            const message = typeof discount === 'number' 
+                ? `${discount}% discount applied!` 
+                : `${discount} applied!`;
+            
+            promoStatus.textContent = `Promo Code "${code}" - ${message}`;
+            promoStatus.classList.remove('d-none', 'alert-danger');
+            promoStatus.classList.add('alert-success');
+            
+            // Disable input after successful application
+            promoInput.disabled = true;
+            applyBtn.disabled = true;
+            applyBtn.textContent = 'Applied';
+            
+            // Here you would typically update cart/checkout total
+            console.log(`Promo code applied: ${code}, Discount: ${discount}`);
+            
+            return true;
+        } else {
+            promoStatus.textContent = `Invalid promo code: "${code}". Please try another.`;
+            promoStatus.classList.remove('d-none', 'alert-success');
+            promoStatus.classList.add('alert-danger');
+            
+            promoInput.classList.remove('is-valid');
+            promoInput.classList.add('is-invalid');
+            
+            return false;
+        }
+    }
+        })
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

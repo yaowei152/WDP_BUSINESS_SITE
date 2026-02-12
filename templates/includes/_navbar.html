@@ -1,0 +1,58 @@
+<nav class="navbar navbar-expand-sm bg-dark navbar-dark">
+    <!-- Brand on left -->
+    <a class="navbar-brand" href="{{ url_for('home') }}">Shop.co</a>
+    
+    <!-- Toggle button for mobile -->
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <!-- Navbar items -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">  
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+            </li>
+            
+            <!-- Dropdown -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbardrop" data-toggle="dropdown">
+                    Shop
+                </a>
+                <div class="dropdown-menu">
+                    <a class="dropdown-item" href="{{ url_for('all_products') }}">All</a>
+                    <a class="dropdown-item" href="{{ url_for('popular') }}">Popular</a>
+                    <a class="dropdown-item" href="{{ url_for('newarrivals') }}">New arrivals</a>
+                </div>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="#">About</a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="#">Contact us</a>
+            </li>
+            
+            <!-- Cart with badge -->
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('cart') }}">
+                    <i class="fas fa-shopping-cart"></i> Cart
+                    {% if session.get('cart') %}
+                    <span class="badge badge-pill badge-danger ml-1">
+                        {{ session.cart|length }}
+                    </span>
+                    {% endif %}
+                </a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="#">Login</a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="#">Sign up</a>
+            </li>
+        </ul>
+    </div>
+</nav>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - MyStore</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .confirmation-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 3rem;
+            margin-top: 2rem;
+            max-width: 800px;
+        }
+        .success-icon {
+            color: #28a745;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .order-details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+        .continue-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/_navbar.html' %}
+    
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="confirmation-card text-center">
+                    <!-- Success Icon -->
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    
+                    <!-- Confirmation Message -->
+                    <h1 class="mb-3">Order Confirmed!</h1>
+                    <p class="lead text-muted mb-4">
+                        Thank you for your purchase. Your order has been successfully placed.
+                    </p>
+                    
+                    <!-- Order Number -->
+                    <div class="alert alert-success mb-4">
+                        <h4 class="alert-heading">
+                            <i class="fas fa-receipt"></i> Order #{{ order_number }}
+                        </h4>
+                        <p class="mb-0">We've sent a confirmation email with your order details.</p>
+                    </div>
+                    
+                    <!-- Order Details -->
+                    <div class="order-details text-left">
+                        <h5 class="mb-3"><i class="fas fa-box"></i> Order Summary</h5>
+                        
+                        {% for item in cart_items %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <strong>{{ item.title }}</strong>
+                                <div class="text-muted small">
+                                    Quantity: {{ item.quantity }} × ${{ "%.2f"|format(item.price) }}
+                                </div>
+                            </div>
+                            <div>
+                                ${{ "%.2f"|format(item.price * item.quantity) }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between">
+                            <strong>Total Amount:</strong>
+                            <strong class="h5 text-primary">${{ "%.2f"|format(total) }}</strong>
+                        </div>
+                    </div>
+                    
+                    <!-- Estimated Delivery -->
+                    <div class="alert alert-info mb-4">
+                        <h6><i class="fas fa-shipping-fast"></i> Estimated Delivery</h6>
+                        <p class="mb-0">
+                            Your order will be delivered within 3-5 business days.
+                        </p>
+                    </div>
+                    
+                    <!-- Next Steps -->
+                    <div class="mb-4">
+                        <h5>What's Next?</h5>
+                        <div class="row mt-3">
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3 border rounded">
+                                    <i class="fas fa-envelope fa-2x text-primary mb-2"></i>
+                                    <h6>Email Confirmation</h6>
+                                    <small class="text-muted">Check your inbox for order details</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3 border rounded">
+                                    <i class="fas fa-truck fa-2x text-success mb-2"></i>
+                                    <h6>Tracking</h6>
+                                    <small class="text-muted">Track your order in 24 hours</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="p-3 border rounded">
+                                    <i class="fas fa-headset fa-2x text-warning mb-2"></i>
+                                    <h6>Need Help?</h6>
+                                    <small class="text-muted">Contact our support team</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="mt-4">
+                        <a href="{{ url_for('all_products') }}" class="btn continue-btn mr-3">
+                            <i class="fas fa-shopping-bag"></i> Continue Shopping
+                        </a>
+                        <a href="{{ url_for('home') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-home"></i> Back to Home
+                        </a>
+                    </div>
+                    
+                    <!-- Contact Info -->
+                    <div class="mt-5 pt-3 border-top">
+                        <p class="text-muted small">
+                            Questions about your order? 
+                            <a href="#">Contact our customer support</a> or call (123) 456-7890.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

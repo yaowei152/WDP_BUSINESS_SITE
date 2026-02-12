@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - MyStore</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .checkout-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .order-summary-card {
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 1.5rem;
+            background: #f8f9fa;
+        }
+        .checkout-step {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .required::after {
+            content: " *";
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    {% include 'includes/_navbar.html' %}
+    
+    <div class="container py-4 checkout-container">
+        <h1 class="mb-4"><i class="fas fa-shopping-bag"></i> Checkout</h1>
+        
+        <div class="row">
+            <!-- Left Column: Checkout Steps -->
+            <div class="col-lg-8">
+                <!-- Shipping Address -->
+                <div class="checkout-step">
+                    <h4 class="mb-3"><i class="fas fa-map-marker-alt text-primary"></i> Shipping Address</h4>
+                    
+                    <form id="checkoutForm" method="POST" action="{{ url_for('confirmation') }}" novalidate>
+                        <div class="row">
+                            <!-- First Name with validation -->
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="required">First name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="firstName" 
+                                       name="firstName"
+                                       required
+                                       minlength="2"
+                                       maxlength="50"
+                                       pattern="[A-Za-z\s]+"
+                                       title="Letters only, 2-50 characters"
+                                       placeholder="Enter your first name">
+                                <div class="invalid-feedback">
+                                    Please enter a valid first name (letters only, 2-50 characters).
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            
+                            <!-- Last Name with validation -->
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="required">Last name</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="lastName" 
+                                       name="lastName"
+                                       required
+                                       minlength="2"
+                                       maxlength="50"
+                                       pattern="[A-Za-z\s]+"
+                                       title="Letters only, 2-50 characters"
+                                       placeholder="Enter your last name">
+                                <div class="invalid-feedback">
+                                    Please enter a valid last name (letters only, 2-50 characters).
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Email with validation -->
+                        <div class="mb-3">
+                            <label for="email" class="required">Email</label>
+                            <input type="email" 
+                                   class="form-control" 
+                                   id="email" 
+                                   name="email"
+                                   required
+                                   pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                                   title="Please enter a valid email address"
+                                   placeholder="you@example.com">
+                            <div class="invalid-feedback">
+                                Please enter a valid email address (e.g., name@example.com).
+                            </div>
+                            <div class="valid-feedback">
+                                Looks good!
+                            </div>
+                        </div>
+                        
+                        <!-- Phone -->
+                        <div class="mb-3">
+                            <label for="phone">Phone Number (Optional)</label>
+                            <input type="tel" 
+                                   class="form-control" 
+                                   id="phone" 
+                                   name="phone"
+                                   pattern="[0-9\-\+\(\)\s]+"
+                                   title="Phone number format: 123-456-7890"
+                                   placeholder="123-456-7890">
+                            <small class="form-text text-muted">
+                                We'll only contact you if there's an issue with your order.
+                            </small>
+                        </div>
+                        
+                        <!-- Country with validation -->
+                        <div class="mb-3">
+                            <label for="country" class="required">Country</label>
+                            <select class="form-control" id="country" name="country" required>
+                                <option value="" selected disabled>Choose...</option>
+                                <option value="US">United States</option>
+                                <option value="SG">Singapore</option>
+                                <option value="MY">Malaysia</option>
+                                <option value="UK">United Kingdom</option>
+                                <option value="CA">Canada</option>
+                                <option value="AU">Australia</option>
+                                <option value="JP">Japan</option>
+                                <option value="KR">South Korea</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a country.
+                            </div>
+                            <div class="valid-feedback">
+                                Looks good!
+                            </div>
+                        </div>
+
+                        <!-- Address with validation -->
+                        <div class="mb-3">
+                            <label for="address" class="required">Address</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="address" 
+                                   name="address"
+                                   required
+                                   minlength="5"
+                                   maxlength="200"
+                                   placeholder="1234 Main St, Apt 4B">
+                            <div class="invalid-feedback">
+                                Please enter your complete shipping address (5-200 characters).
+                            </div>
+                            <div class="valid-feedback">
+                                Looks good!
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Postal Code with validation -->
+                            <div class="col-md-4 mb-3">
+                                <label for="postalCode" class="required">Postal Code</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="postalCode" 
+                                       name="postalCode"
+                                       required
+                                       pattern="[0-9]{5,6}"
+                                       title="6 digits only"
+                                       placeholder="123456">
+                                <div class="invalid-feedback">
+                                    Please enter a valid postal code (6 digits).
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+
+                            <!-- City with validation -->
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="required">City</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="city" 
+                                       name="city"
+                                       required
+                                       minlength="2"
+                                       maxlength="50"
+                                       pattern="[A-Za-z\s]+"
+                                       title="Letters only"
+                                       placeholder="City">
+                                <div class="invalid-feedback">
+                                    Please enter a valid city name.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            
+                            <!-- State with validation -->
+                            <div class="col-md-4 mb-3">
+                                <label for="state" class="required">State/Province</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="state" 
+                                       name="state"
+                                       required
+                                       minlength="2"
+                                       maxlength="50"
+                                       pattern="[A-Za-z\s]+"
+                                       title="Please enter your state or province"
+                                       placeholder="e.g., California">
+                                <div class="invalid-feedback">
+                                    Please enter your state or province (letters only, 2-50 characters).
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                                <small class="form-text text-muted">
+                                    Enter your state, province, or region
+                                </small>
+                            </div>
+                        </div>
+            
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-success btn-block btn-lg">
+                            <i class="fas fa-check"></i> Place Order
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Right Column: Order Summary -->
+            <div class="col-lg-4">
+                <div class="order-summary-card sticky-top" style="top: 20px;">
+                    <h4 class="mb-3"><i class="fas fa-receipt"></i> Order Summary</h4>
+                    
+                    <!-- Cart Items -->
+                    <div class="mb-3">
+                        <h6>Items ({{ cart|length }})</h6>
+                        {% for item in cart %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                <small>{{ item.title }} × {{ item.quantity }}</small>
+                            </div>
+                            <div>
+                                <small>${{ "%.2f"|format(item.price * item.quantity) }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Price Breakdown -->
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between">
+                            <span>Subtotal</span>
+                            <span>${{ "%.2f"|format(total) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Shipping</span>
+                            <span class="text-success">Free</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Tax (8%)</span>
+                            <span>${{ "%.2f"|format(tax) }}</span>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Grand Total -->
+                    <div class="d-flex justify-content-between mb-4">
+                        <strong>Total</strong>
+                        <strong class="h5 text-primary">${{ "%.2f"|format(grand_total) }}</strong>
+                    </div>
+                    
+                    <!-- Back to Cart Button -->
+                    <div class="mb-3">
+                        <a href="{{ url_for('cart') }}" class="btn btn-outline-secondary btn-block">
+                            <i class="fas fa-arrow-left"></i> Back to Cart
+                        </a>
+                    </div>
+                    
+                    <!-- Security Message -->
+                    <div class="alert alert-info mt-3 mb-0">
+                        <small><i class="fas fa-lock"></i> Your payment is secure and encrypted</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript for form validation -->
+    <script>
+    // Bootstrap form validation
+    (function() {
+        'use strict';
+        
+        // Fetch the form we want to apply validation to
+        const form = document.getElementById('checkoutForm');
+        
+        // Listen for form submission
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+        
+        // Real-time validation for postal code 
+        const postalCodeInput = document.getElementById('postalCode');
+        if (postalCodeInput) {
+            postalCodeInput.addEventListener('input', function() {
+                // Format
+                if (this.value.length === 6 && /^\d+$/.test(this.value)) {
+                    this.setCustomValidity('');
+                } else {
+                    this.setCustomValidity('Singapore postal codes must be 6 digits');
+                }
+            });
+        }
+        
+        // Real-time validation for email
+        const emailInput = document.getElementById('email');
+        if (emailInput) {
+            emailInput.addEventListener('input', function() {
+                const emailPattern = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
+                if (emailPattern.test(this.value)) {
+                    this.setCustomValidity('');
+                } else {
+                    this.setCustomValidity('Please enter a valid email address');
+                }
+            });
+        }
+        
+    })();
+    
+    // Auto-format phone number
+    document.getElementById('phone')?.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 3 && value.length <= 6) {
+            value = value.replace(/(\d{3})(\d+)/, '$1-$2');
+        } else if (value.length > 6) {
+            value = value.replace(/(\d{3})(\d{3})(\d+)/, '$1-$2-$3');
+        }
+        e.target.value = value;
+    });
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

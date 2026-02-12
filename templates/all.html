@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/allstyle.css') }}">
+</head>
+<body>
+{% extends "base.html" %}
+
+{% block title %}All{% endblock %}
+
+{% block content %}
+<h2>All</h2>
+<div class="container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <h3>Filters</h3>
+
+        <div class="filter-group">
+    <form method="GET" action="{{ url_for('home') }}">
+
+      <h3>Category</h3>
+      <label><input type="checkbox" name="category" value="T-shirts"> T-shirts</label><br>
+      <label><input type="checkbox" name="category" value="Shorts"> Shorts</label><br>
+      <label><input type="checkbox" name="category" value="Shirts"> Shirts</label><br>
+      <label><input type="checkbox" name="category" value="Hoodie"> Hoodie</label><br>
+      <label><input type="checkbox" name="category" value="Jeans"> Jeans</label><br>
+
+      <h3>Max Price</h3>
+      <input type="range" name="max_price" min="0" max="300" value="300" oninput="this.nextElementSibling.value = this.value">
+      <output>300</output>
+
+      <br><br>
+      <button type="submit">Apply Filters</button>
+
+</form>
+
+
+       
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+        <div class="content-header">
+            <h2>Items</h2>
+        </div>
+        <!-- all.html, popular.html, newarrivals.html -->
+    <div class="product-grid">
+       {% for product in products %}
+       <div class="product-card">
+          <a href="{{ url_for('add_to_cart', product_id=product.id) }}">
+            <img src="{{ url_for('static', filename='images/' ~ product.image ) }}" 
+                 alt="{{ product.title }}"
+                 class="product-image">
+          </a>
+          <h4>{{ product.title }}</h4>
+          <p class="price">${{ product.cost }}</p>
+        
+          <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn btn-primary">
+            Add to Cart
+          </a>
+        </div>
+        {% endfor %}
+    </div>
+        
+    </main>
+
+</div>
+<script>
+    const priceRange = document.getElementById("priceRange");
+    const priceOutput = document.getElementById("priceOutput");
+
+    priceRange.addEventListener("input", function () {
+        priceOutput.textContent = this.value;
+    });
+</script>
+
+<!-- Footer -->
+<footer class="footer mt-5 py-4 bg-dark text-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <h5>Our Shop</h5>
+                <p>Quality clothing at affordable prices. Your one-stop shop for fashionable apparel.</p>
+                <div class="social-icons mt-3">
+                    <a href="#" class="text-white mr-3"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="text-white mr-3"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="text-white mr-3"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="text-white"><i class="fab fa-pinterest"></i></a>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>Quick Links</h5>
+                <ul class="list-unstyled">
+                    <li><a href="{{ url_for('all_products') }}" class="text-white-50">All Products</a></li>
+                    <li><a href="{{ url_for('popular') }}" class="text-white-50">Popular Items</a></li>
+                    <li><a href="{{ url_for('newarrivals') }}" class="text-white-50">New Arrivals</a></li>
+                    <li><a href="{{ url_for('cart') }}" class="text-white-50">Shopping Cart</a></li>
+                </ul>
+            </div>
+            
+            <div class="col-md-4">
+                <h5>Contact Info</h5>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-map-marker-alt mr-2"></i> 123 Fashion St, Style City</li>
+                    <li><i class="fas fa-phone mr-2"></i> (123) 456-7890</li>
+                    <li><i class="fas fa-envelope mr-2"></i> support@myshop.com</li>
+                    <li><i class="fas fa-clock mr-2"></i> Mon-Fri: 9AM-6PM</li>
+                </ul>
+            </div>
+        </div>
+        
+        <hr class="bg-light mt-4">
+        
+        <div class="text-center pt-3">
+            <p class="mb-0">&copy; 2024 My Fashion Shop. All rights reserved.</p>
+            <p class="small text-white-50 mt-1">
+                <a href="#" class="text-white-50 mr-3">Privacy Policy</a> | 
+                <a href="#" class="text-white-50 mr-3">Terms of Service</a> | 
+                <a href="#" class="text-white-50">Shipping Policy</a>
+            </p>
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+
+</body>
+</html>
