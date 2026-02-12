@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head><title>Sign Up</title></head>
+<style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    .login-container {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    
+    h2 {
+      color: #333;
+      margin-bottom: 30px;
+    }
+    
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    label {
+      text-align: left;
+      color: #555;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    input {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+    }
+    
+    button {
+      padding: 12px;
+      background: #000000;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    p {
+      color: #666;
+      margin-top: 20px;
+    }
+    
+    a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+<body>
+  <div class="login-container">  
+    <h2>Create Account</h2>
+    <form method="POST">
+      <label>Username</label>
+      <input type="text" name="username" required>
+      <label>Password</label>
+      <input type="password" name="password" required>
+      <button type="submit">Sign Up</button>
+    </form>
+    <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+  <div>
+</body>
+</html>

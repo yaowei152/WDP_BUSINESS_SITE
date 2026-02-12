@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop.co - Fashion Clothing Store</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/" class="logo">Shop.co</a>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="shop">Shop</a></li>
+                <li><a href="about">About</a></li>
+                <li><a href="{{ url_for('contact') }}">Contact Us</a></li>
+                <li><a href="cart">Cart</a></li>
+                {% if session.get('user_id') %}
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+                <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <h1>Welcome to Shop.co</h1>
+        <p>Level up your wardrobe here</p>
+        <a href="new-arrivals" class="cta-button">Shop New Collection</a>
+    </section>
+
+    <div class="container">
+        <!-- Top Categories -->
+        <section class="section">
+            <h2>Top Categories</h2>
+            <div class="grid">
+                {% for item in top_categories %}
+                <div class="card">
+                    <h3>{{ item.title }}</h3>
+                    <p>{{ item.desc }}</p>
+                    <a href="{{ item.link }}">Explore</a>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- Trending Now -->
+        <section class="trendy_clothes">
+            <h2>Trending Now</h2>
+            <div class="grid">
+            {% for item in trending_now %}
+            <div class="card">
+                <img src="{{ url_for('static', filename=item.img) }}" alt="{{ item.alt }}" style="width:100%; height:250px; object-fit:cover; border-radius:5px; margin-bottom:1rem;">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.price }}</p>
+                <a href="{{ item.link }}">View Item</a>
+            </div>
+            {% endfor %}
+</div>
+
+            </div>
+        </section>
+
+        <!-- Quick Links -->
+        <section class="section">
+            <h2>Quick Links</h2>
+            <div class="grid">
+                {% for link in quick_links %}
+                <div class="card">
+                    <h3>{{ link.title }}</h3>
+                    <p>{{ link.desc }}</p>
+                    <a href="{{ link.link }}">Go</a>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <footer>
+
+        <p>&copy; 2026 Shop.co. All rights reserved.</p>
+    </footer>
+</body>
+</html>

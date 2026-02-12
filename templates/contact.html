@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Contact Us - Shop.co</title>
+    <style>
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover {
+            color: #ff6b6b;
+        }
+        header {
+            background-color: #222;
+            color: white;
+            padding: 1rem 0;
+            position: fixed;   /* fixed at top */
+            top: 0;
+            width: 100%;       /* full width */
+            z-index: 1000;     /* stays above content */
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;         /* remove default margin */
+            background-color: #f9f9f9;
+            padding-top: 80px; /* offset for fixed header */
+        }
+        h1 {
+            color: #333;
+        }
+        .contact-info {
+            margin-bottom: 20px;
+        }
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 500px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+        input[type="text"], input[type="email"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .contact-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 2rem;
+        }
+        form {
+            width: 500px;
+        }
+        .map {
+            flex: none;
+            min-width: 300px;
+            max-width: 350px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/" class="logo">Shop.co</a>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="shop">Shop</a></li>
+                <li><a href="about">About</a></li>
+                <li><a href="{{ url_for('contact') }}">Contact Us</a></li>
+                <li><a href="cart">Cart</a></li>
+                {% if session.get('user_id') %}
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                <li><a href="{{ url_for('login') }}">Login</a></li>
+                <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <h1>Contact Us</h1>
+    <div class="contact-info">
+        <p>📞 Phone: <a href="tel:+6512345678">+65 1234 5678</a></p>
+        <p>📧 Email: <a href="mailto:support@shop.co">support@shop.co</a></p>
+        <p>🏢 Address: 123 Ang Mo Kio Ave 3, Singapore 560123</p>
+    </div>
+
+    <div class="contact-container">
+        <form action="{{ url_for('contact') }}" method="POST">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" placeholder="Your name" required>
+
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="Your email" required>
+
+            <label for="message">Message</label>
+            <textarea id="message" name="message" placeholder="Your message" required></textarea>
+
+            <button type="submit">Send</button>
+        </form>
+        <div class="map">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.6770213053014!2d103.8423142742685!3d1.370475098616562!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31da16e77d4b305f%3A0x6c05704c07d5b71c!2s123%20Ang%20Mo%20Kio%20Ave%203%2C%20Block%20123%2C%20Singapore%20560123!5e0!3m2!1sen!2ssg!4v1769057989069!5m2!1sen!2ssg" 
+                width="350" height="300" style="border: 0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+        </div>
+    </div>
+</body>
+</html>

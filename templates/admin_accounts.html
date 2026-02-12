@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - User Accounts</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; }
+        h2 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        tr:nth-child(even) { background-color: #fafafa; }
+        input[type="text"] { padding: 8px; width: 300px; }
+        button { padding: 8px 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .top-actions { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h2>User Accounts</h2>
+
+    <!-- Search Form -->
+    <form method="POST">
+        <input type="text" name="search" placeholder="Search username..." value="{{ search_query }}">
+        <button type="submit">Search</button>
+    </form>
+
+    <!-- Clear All Accounts -->
+    <form action="{{ url_for('clear_users') }}" method="POST" style="display:inline;">
+        <button type="submit" onclick="return confirm('Clear ALL accounts?')">Clear All Accounts</button>
+    </form>
+    
+    {% if users %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Password Hash</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.password_hash }}</td>
+                    <td>
+                        <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" style="display:inline;">
+                            <button type="submit" onclick="return confirm('Delete this user?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No accounts found.</p>
+    {% endif %}
+
+    <p><a href="{{ url_for('admin_logout') }}">Logout</a></p>
+</body>
+</html>
