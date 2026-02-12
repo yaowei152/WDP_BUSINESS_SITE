@@ -2,24 +2,56 @@
 {% block title %}Shop All | Shop.co{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4 mb-5">
     <h1 class="font-bold text-3xl mb-4">
         {% if search_query %}Results for "{{ search_query }}"{% else %}All Products{% endif %}
     </h1>
 
-    <div class="product-grid">
-        {% for product in products %}
-        <a href="{{ url_for('product_details', product_id=product.id) }}" class="card">
-            <div class="card-img-wrapper">
-                <img src="{{ url_for('static', filename='images/' ~ product.image) }}" alt="{{ product.title }}" class="card-img">
-            </div>
-            <h3 class="card-title">{{ product.title }}</h3>
-             <div class="rating-stars text-sm mb-1">
-                {% for i in range(5) %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
-            </div>
-            <p class="card-price">${{ "%.2f"|format(product.cost) }}</p>
-        </a>
-        {% endfor %}
+    <div class="shop-layout">
+        <aside class="filter-sidebar">
+            <form action="{{ url_for('all_products') }}" method="GET">
+                {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+
+                <div class="mb-5">
+                    <h3 class="filter-title">Categories</h3>
+                    <div class="filter-pills">
+                        {% for category in all_categories %}
+                        <label>
+                            <input type="checkbox" name="category" value="{{ category }}" {% if category in current_cats %}checked{% endif %}>
+                            <span class="filter-pill">{{ category }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-5">
+                    <h3 class="filter-title">Max Price: $<span id="price-val">{{ max_price }}</span></h3>
+                    <input type="range" name="max_price" min="0" max="500" value="{{ max_price }}" oninput="document.getElementById('price-val').textContent = this.value">
+                    <div class="flex justify-between text-sm text-muted mt-2">
+                        <span>$0</span><span>$500</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn w-full">Apply Filters</button>
+            </form>
+        </aside>
+
+        <div class="product-grid">
+            {% for product in products %}
+            <a href="{{ url_for('product_details', product_id=product.id) }}" class="card">
+                <div class="card-img-wrapper">
+                    <img src="{{ url_for('static', filename='images/' ~ product.image) }}" alt="{{ product.title }}" class="card-img">
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">{{ product.title }}</h3>
+                     <div class="rating-stars">
+                        {% for i in range(5) %}<i class="fas fa-star"></i>{% endfor %} <span class="text-muted text-sm">(10)</span>
+                    </div>
+                    <p class="card-price">${{ "%.2f"|format(product.cost) }}</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}

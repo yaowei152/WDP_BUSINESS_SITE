@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 
@@ -40,20 +40,22 @@ class Product(db.Model):
     is_popular = db.Column(db.Boolean, default=False)
     reviews = db.relationship('Review', backref='product', lazy=True)
 
+    # --- CRITICAL FIX: Added helper methods for ratings ---
     def get_average_rating(self):
         if not self.reviews:
-            return 0
-        total = sum([review.rating for review in self.reviews])
+            return 0.0
+        total = sum([r.rating for r in self.reviews])
         return round(total / len(self.reviews), 1)
-    
+
     def get_rating_counts(self):
         counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
-        if not self.reviews:
+        total = len(self.reviews)
+        if total == 0:
             return counts, 0
-        for review in self.reviews:
-            counts[review.rating] += 1
-        total_reviews = len(self.reviews)
-        return counts, total_reviews
+        for r in self.reviews:
+            counts[r.rating] = counts.get(r.rating, 0) + 1
+        return counts, total
+    # ------------------------------------------------------
 
 
 class Review(db.Model):
@@ -95,15 +97,14 @@ def inject_context():
 # ---------------- Routes ----------------
 @app.route('/')
 def home():
-    if 'user_id' not in session: return redirect(url_for('login'))
+    # Removed mandatory login check for home page for better UX
     trending = Product.query.filter_by(is_popular=True).limit(4).all()
     new_arrivals = Product.query.order_by(Product.id.desc()).limit(4).all()
     return render_template('index.html', trending=trending, new_arrivals=new_arrivals)
 
 @app.route('/all')
 def all_products():
-    if 'user_id' not in session: return redirect(url_for('login'))
-    
+    # Removed mandatory login check for shop page
     search_query = request.args.get('q', '').strip()
     selected_cats = request.args.getlist("category")
     max_price = request.args.get("max_price", default=1000, type=int)
@@ -118,13 +119,15 @@ def all_products():
     products = query.all()
     all_categories = [r.category for r in db.session.query(Product.category).distinct()]
     
-    return render_template('all.html', products=products, all_categories=all_categories, current_cats=selected_cats, max_price=max_price, search=search_query)
+    return render_template('all.html', products=products, all_categories=all_categories, current_cats=selected_cats, max_price=max_price, search_query=search_query)
 
 @app.route('/product/<int:product_id>')
 def product_details(product_id):
-    if 'user_id' not in session: return redirect(url_for('login'))
+    # Removed mandatory login check
     product = Product.query.get_or_404(product_id)
     reviews = Review.query.filter_by(product_id=product.id).order_by(Review.date_posted.desc()).all()
+    
+    # These methods now exist on the Product model
     rating_counts, total_reviews = product.get_rating_counts()
     average_rating = product.get_average_rating()
     
@@ -133,7 +136,10 @@ def product_details(product_id):
 # --- Cart & Checkout ---
 @app.route('/add_to_cart/<int:product_id>')
 def add_to_cart(product_id):
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session:
+        flash("Please log in to add items to cart.", "info")
+        return redirect(url_for('login'))
+        
     product = Product.query.get(product_id)
     if product:
         cart = session.get('cart', [])
@@ -151,7 +157,9 @@ def add_to_cart(product_id):
 
 @app.route('/cart')
 def cart():
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session:
+        flash("Please log in to view cart.", "info")
+        return redirect(url_for('login'))
     cart = session.get('cart', [])
     total = sum(item['price'] * item['quantity'] for item in cart)
     return render_template("cart.html", cart=cart, total=total)
@@ -179,15 +187,15 @@ def update_cart(product_id):
 def checkout():
     if 'user_id' not in session: return redirect(url_for('login'))
     cart = session.get('cart', [])
+    if not cart: return redirect(url_for('all_products'))
+
     total = sum(item['price'] * item['quantity'] for item in cart)
     
     if request.method == 'POST':
-        # Create Order
-        new_order = Order(total_price=total * 1.08, user_id=session['user_id']) # 8% Tax included
+        new_order = Order(total_price=total * 1.08, user_id=session['user_id'])
         db.session.add(new_order)
         db.session.commit()
         
-        # Add Items to Order
         for item in cart:
             order_item = OrderItem(
                 product_name=item['title'],
@@ -198,7 +206,7 @@ def checkout():
             db.session.add(order_item)
         
         db.session.commit()
-        session['cart'] = [] # Clear cart
+        session['cart'] = []
         return redirect(url_for('confirmation', order_id=new_order.id))
 
     return render_template('checkout.html', cart=cart, total=total, tax=total*0.08, grand_total=total*1.08)
@@ -213,7 +221,6 @@ def confirmation(order_id):
 def profile():
     if 'user_id' not in session: return redirect(url_for('login'))
     user = User.query.get(session['user_id'])
-    # Get user's orders, sorted by newest first
     orders = Order.query.filter_by(user_id=user.id).order_by(Order.date_ordered.desc()).all()
     return render_template('profile.html', user=user, orders=orders)
 
@@ -226,9 +233,9 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             session['user_id'] = user.id
-            session['username'] = user.username # Store for header
+            session['username'] = user.username
             return redirect(url_for('home'))
-        return render_template('login.html', error="Invalid credentials")
+        flash("Invalid credentials", "error")
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -238,28 +245,28 @@ def signup():
         email = request.form['email']
         password = request.form['password']
         if User.query.filter((User.username==username)|(User.email==email)).first():
-            return render_template('signup.html', error="User already exists")
+            flash("User already exists", "error")
+            return render_template('signup.html')
         new_user = User(username=username, email=email)
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
+        flash("Account created! Please log in.", "success")
         return redirect(url_for('login'))
     return render_template('signup.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login'))
+    return redirect(url_for('home'))
 
 @app.route('/popular')
 def popular():
-    if 'user_id' not in session: return redirect(url_for('login'))
     products = Product.query.filter_by(is_popular=True).all()
     return render_template('all.html', products=products, all_categories=[], hide_filters=True, search_query="Popular Items")
 
 @app.route('/newarrivals')
 def newarrivals():
-    if 'user_id' not in session: return redirect(url_for('login'))
     products = Product.query.order_by(Product.id.desc()).limit(8).all()
     return render_template('all.html', products=products, all_categories=[], hide_filters=True, search_query="New Arrivals")
 
@@ -273,21 +280,29 @@ def contact():
 # --- DB Setup ---
 def populate_db():
     if Product.query.first(): return
+    
+    # Create dummy user for reviews
+    reviewer = User(username="Reviewer", email="rev@test.com")
+    reviewer.set_password("password")
+    db.session.add(reviewer)
+    db.session.commit()
+
     products_data = [
-        {"title": "Essential Cotton Tee", "cost": 45.00, "image": "tshirt1.png", "category": "T-shirts", "is_popular": True, "description": "100% organic cotton daily wear."},
-        {"title": "Oxford Button-Down", "cost": 89.00, "image": "shirt1.png", "category": "Shirts", "is_popular": False, "description": "Classic fit for work or leisure."},
-        {"title": "Urban Graphic Tee", "cost": 55.00, "image": "tshirt2.png", "category": "T-shirts", "is_popular": True, "description": "Bold design with premium print."},
-        {"title": "Executive Dress Shirt", "cost": 120.00, "image": "shirt2.png", "category": "Shirts", "is_popular": False, "description": "Wrinkle-free Egyptian cotton."},
-        {"title": "Signature Hoodie", "cost": 110.00, "image": "hoodie1.png", "category": "Hoodie", "is_popular": True, "description": "Heavyweight fleece comfort."},
-        {"title": "Weekend Chino Shorts", "cost": 65.00, "image": "shorts1.png", "category": "Shorts", "is_popular": False, "description": "Stretch-cotton casual shorts."}
+        {"title": "Essential Cotton Tee", "cost": 45.00, "image": "tshirt1.png", "category": "T-shirts", "is_popular": True, "description": "100% organic cotton daily wear. Breathable and soft against the skin."},
+        {"title": "Oxford Button-Down", "cost": 89.00, "image": "shirt1.png", "category": "Shirts", "is_popular": False, "description": "Classic fit for work or leisure. Wrinkle-resistant fabric."},
+        {"title": "Urban Graphic Tee", "cost": 55.00, "image": "tshirt2.png", "category": "T-shirts", "is_popular": True, "description": "Bold design with premium print. Limited edition."},
+        {"title": "Executive Dress Shirt", "cost": 120.00, "image": "shirt2.png", "category": "Shirts", "is_popular": False, "description": "Wrinkle-free Egyptian cotton. Tailored fit."},
+        {"title": "Signature Hoodie", "cost": 110.00, "image": "hoodie1.png", "category": "Hoodie", "is_popular": True, "description": "Heavyweight fleece comfort. Perfect for cooler days."},
+        {"title": "Weekend Chino Shorts", "cost": 65.00, "image": "shorts1.png", "category": "Shorts", "is_popular": False, "description": "Stretch-cotton casual shorts. flexible waistband."}
     ]
     for p in products_data:
         product = Product(**p)
         db.session.add(product)
+        db.session.commit()
         
         # Add sample reviews
-        review1 = Review(rating=5, comment="Excellent quality! Fits perfectly.", user_name="John D.", product=product, date_posted=datetime(2023, 10, 25))
-        review2 = Review(rating=4, comment="Good product, fast shipping.", user_name="Sarah M.", product=product, date_posted=datetime(2023, 11, 1))
+        review1 = Review(rating=5, comment="Excellent quality! Fits perfectly.", user_name="John D.", product_id=product.id, date_posted=datetime(2023, 10, 25))
+        review2 = Review(rating=4, comment="Good product, fast shipping.", user_name="Sarah M.", product_id=product.id, date_posted=datetime(2023, 11, 1))
         db.session.add_all([review1, review2])
         
     db.session.commit()

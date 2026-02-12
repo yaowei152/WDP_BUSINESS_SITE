@@ -2,51 +2,55 @@
 {% block title %}Shop.co | Home{% endblock %}
 
 {% block content %}
-<section class="bg-black text-white text-center py-20">
-    <h1 class="text-5xl font-extrabold mb-4">FIND CLOTHES THAT MATCH YOUR STYLE</h1>
-    <p class="text-xl mb-8 text-gray-300">Browse through our diverse range of meticulously crafted garments, designed to bring out your individuality and cater to your sense of style.</p>
-    <a href="{{ url_for('all_products') }}" class="btn bg-white text-black px-8 py-4 rounded-full font-bold">Shop Now</a>
+<section class="hero-banner">
+    <h1>ELEVATE YOUR STYLE</h1>
+    <p>Discover premium streetwear and essentials crafted for the modern lifestyle.</p>
+    <a href="{{ url_for('all_products') }}" class="btn" style="font-size: 1.1rem; padding: 1rem 2.5rem;">Shop The Collection</a>
 </section>
 
-<div class="container mt-4">
-    <h2 class="text-4xl font-extrabold text-center mb-8">NEW ARRIVALS</h2>
+<div class="container">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="font-bold text-2xl">New Arrivals</h2>
+        <a href="{{ url_for('newarrivals') }}" class="btn-outline">View All</a>
+    </div>
     <div class="product-grid mb-5">
         {% for product in new_arrivals %}
         <a href="{{ url_for('product_details', product_id=product.id) }}" class="card">
             <div class="card-img-wrapper">
                 <img src="{{ url_for('static', filename='images/' ~ product.image) }}" alt="{{ product.title }}" class="card-img">
             </div>
-            <h3 class="card-title">{{ product.title }}</h3>
-            <div class="rating-stars text-sm mb-1">
-                {% for i in range(5) %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+            <div class="card-body">
+                <h3 class="card-title">{{ product.title }}</h3>
+                <div class="rating-stars">
+                    {% for i in range(5) %}<i class="fas fa-star"></i>{% endfor %} <span class="text-muted text-sm">(12)</span>
+                </div>
+                <p class="card-price">${{ "%.2f"|format(product.cost) }}</p>
             </div>
-            <p class="card-price">${{ "%.2f"|format(product.cost) }}</p>
         </a>
         {% endfor %}
     </div>
-    <div class="text-center mb-5">
-        <a href="{{ url_for('newarrivals') }}" class="btn btn-outline px-8 py-3">View All</a>
+
+    <hr class="border-color my-5" style="border-top: 1px solid var(--border-color); margin: 4rem 0;">
+
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="font-bold text-2xl">Trending Now</h2>
+        <a href="{{ url_for('popular') }}" class="btn-outline">View All</a>
     </div>
-
-    <hr class="border-gray-200 my-5">
-
-    <h2 class="text-4xl font-extrabold text-center mb-8">TOP SELLING</h2>
     <div class="product-grid mb-5">
         {% for product in trending %}
         <a href="{{ url_for('product_details', product_id=product.id) }}" class="card">
             <div class="card-img-wrapper">
                 <img src="{{ url_for('static', filename='images/' ~ product.image) }}" alt="{{ product.title }}" class="card-img">
             </div>
-            <h3 class="card-title">{{ product.title }}</h3>
-             <div class="rating-stars text-sm mb-1">
-                {% for i in range(5) %}<i class="fas fa-star text-yellow-400"></i>{% endfor %}
+            <div class="card-body">
+                <h3 class="card-title">{{ product.title }}</h3>
+                <div class="rating-stars">
+                    {% for i in range(5) %}<i class="fas fa-star"></i>{% endfor %} <span class="text-muted text-sm">(24)</span>
+                </div>
+                <p class="card-price">${{ "%.2f"|format(product.cost) }}</p>
             </div>
-            <p class="card-price">${{ "%.2f"|format(product.cost) }}</p>
         </a>
         {% endfor %}
-    </div>
-    <div class="text-center mb-5">
-        <a href="{{ url_for('popular') }}" class="btn btn-outline px-8 py-3">View All</a>
     </div>
 </div>
 {% endblock %}

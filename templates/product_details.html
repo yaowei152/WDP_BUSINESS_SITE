@@ -4,30 +4,40 @@
 {% block content %}
 <div class="container mt-4">
     <div class="product-details-layout">
-        <div>
-            <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.title }}" class="detail-img">
+        <div class="card-img-wrapper" style="height: 500px; border-radius: 16px;">
+            <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.title }}" class="card-img">
         </div>
         <div>
             <h1 class="detail-title">{{ product.title }}</h1>
+            <div class="flex items-center gap-2 mb-4">
+                 <div class="rating-stars-lg" style="font-size: 1.2rem;">
+                    {% for i in range(average_rating|round|int) %}<i class="fas fa-star"></i>{% endfor %}
+                    {% for i in range(5 - average_rating|round|int) %}<i class="far fa-star"></i>{% endfor %}
+                </div>
+                <span class="text-muted">({{ total_reviews }} reviews)</span>
+            </div>
             <p class="detail-price">${{ "%.2f"|format(product.cost) }}</p>
             <p class="detail-desc">{{ product.description }}</p>
-            <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn w-full">Add to Cart</a>
+            
+            <div class="mb-4">
+                 <span class="font-bold">Category:</span> <span class="filter-pill" style="display:inline-block; margin-left: 10px;">{{ product.category }}</span>
+            </div>
+
+            <a href="{{ url_for('add_to_cart', product_id=product.id) }}" class="btn w-full" style="font-size: 1.1rem; padding: 1rem;">Add to Cart</a>
         </div>
     </div>
 
     <div class="reviews-section">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="font-bold text-2xl">All Reviews <span class="text-muted text-lg">({{ total_reviews }})</span></h2>
-        </div>
+        <h2 class="font-bold text-2xl mb-5">Customer Reviews</h2>
 
         <div class="review-summary">
             <div class="rating-box">
                 <div class="rating-avg">{{ average_rating }}</div>
-                <div class="rating-stars">
+                <div class="rating-stars-lg">
                     {% for i in range(average_rating|round|int) %}<i class="fas fa-star"></i>{% endfor %}
                     {% for i in range(5 - average_rating|round|int) %}<i class="far fa-star"></i>{% endfor %}
                 </div>
-                <div class="rating-count">Based on {{ total_reviews }} reviews</div>
+                <div class="text-muted">Based on {{ total_reviews }} reviews</div>
             </div>
             <div class="rating-bars">
                 {% for star in [5, 4, 3, 2, 1] %}
@@ -48,12 +58,14 @@
             {% for review in reviews %}
             <div class="review-item">
                 <div class="review-header">
-                    <span class="review-user">{{ review.user_name }} <i class="fas fa-check-circle text-green-500 ml-1" style="font-size: 0.8rem;"></i></span>
-                    <span class="review-date">Posted on {{ review.date_posted.strftime('%B %d, %Y') }}</span>
-                </div>
-                <div class="rating-stars" style="font-size: 1rem;">
-                    {% for i in range(review.rating) %}<i class="fas fa-star"></i>{% endfor %}
-                    {% for i in range(5 - review.rating) %}<i class="far fa-star"></i>{% endfor %}
+                    <div>
+                        <span class="review-user">{{ review.user_name }}</span> <i class="fas fa-check-circle text-success ml-1" style="font-size: 0.9rem;"></i>
+                        <div class="rating-stars" style="font-size: 0.9rem;">
+                            {% for i in range(review.rating) %}<i class="fas fa-star"></i>{% endfor %}
+                            {% for i in range(5 - review.rating) %}<i class="far fa-star"></i>{% endfor %}
+                        </div>
+                    </div>
+                    <span class="review-date">{{ review.date_posted.strftime('%B %d, %Y') }}</span>
                 </div>
                 <p class="review-comment">{{ review.comment }}</p>
             </div>
