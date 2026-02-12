@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}My Profile | Shop.co{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 3rem; margin-bottom: 4rem;">
+    <h1 class="mb-4">My Account</h1>
+
+    <div class="profile-header">
+        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Hello, {{ user.username }}!</h2>
+        <p style="color: #6b7280;">{{ user.email }}</p>
+    </div>
+
+    <h2 class="mb-4" style="font-size: 1.3rem;">Order History</h2>
+
+    {% if orders %}
+        {% for order in orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <div>
+                    <span style="display: block; font-size: 0.9rem; color: #6b7280;">Order Placed</span>
+                    <strong>{{ order.date_ordered.strftime('%B %d, %Y') }}</strong>
+                </div>
+                <div>
+                    <span style="display: block; font-size: 0.9rem; color: #6b7280;">Total</span>
+                    <strong>${{ "%.2f"|format(order.total_price) }}</strong>
+                </div>
+                <div>
+                    <span style="display: block; font-size: 0.9rem; color: #6b7280;">Order #</span>
+                    <strong>{{ order.id }}</strong>
+                </div>
+                <div>
+                    <span class="order-status">{{ order.status }}</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                {% for item in order.items %}
+                <div style="background: #f9fafb; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem;">
+                    {{ item.quantity }}x {{ item.product_name }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align: center; padding: 3rem; background: white; border-radius: 12px; border: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; margin-bottom: 1rem;">You haven't placed any orders yet.</p>
+            <a href="{{ url_for('all_products') }}" class="btn" style="width: auto;">Start Shopping</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
