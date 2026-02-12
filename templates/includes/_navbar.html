@@ -31,7 +31,7 @@
             </li>
             
             <li class="nav-item">
-                <a class="nav-link" href="#">Contact us</a>
+                <a class="nav-link" href="{{ url_for('contact') }}">Contact us</a>
             </li>
             
             <!-- Cart with badge -->
@@ -46,13 +46,19 @@
                 </a>
             </li>
             
+            {% if session.get('user_id') %}
             <li class="nav-item">
-                <a class="nav-link" href="#">Login</a>
+                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('login') }}">Login</a>
             </li>
             
             <li class="nav-item">
-                <a class="nav-link" href="#">Sign up</a>
+                <a class="nav-link" href="{{ url_for('signup') }}">Sign up</a>
             </li>
+            {% endif %}
         </ul>
     </div>
 </nav>

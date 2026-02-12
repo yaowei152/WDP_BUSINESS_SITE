@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
+import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
@@ -19,6 +20,7 @@ class Feedback(db.Model):
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
 
     def set_password(self, password):
@@ -48,6 +50,11 @@ products = [
 # ---------------- Routes ----------------
 @app.route('/')
 def home():
+    # CUSTOMER SECURITY CHECK:
+    # If not logged in, redirect to the customer login page
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     top_categories = [
         {'title': "Cotton Collection", 'desc': "comfortable and breathable", 'link': "new-arrivals", 'img': 'uniqloshirt.avif'},
         {'title': "Men's Fashion", 'desc': "Classic and contemporary designs", 'link': "shop?category=mens", 'img': 'mens.jpg'},
@@ -73,6 +80,9 @@ def home():
 
 @app.route('/all')
 def all_products():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
     selected_categories = request.args.getlist("category")
     max_price = request.args.get("max_price", default=9999, type=int)
     
@@ -81,16 +91,25 @@ def all_products():
 
 @app.route('/popular')
 def popular():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
     popular_products = [p for p in products if p.is_popular]
     return render_template('popular.html', products=popular_products)
 
 @app.route('/newarrivals')
 def newarrivals():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
     new_products = products[-2:]
     return render_template('newarrivals.html', products=new_products)
 
 @app.route('/add_to_cart/<int:product_id>')
 def add_to_cart(product_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
     product = next((p for p in products if p.id == product_id), None)
     
     if product:
@@ -121,6 +140,9 @@ def add_to_cart(product_id):
 
 @app.route('/cart')
 def cart():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
     cart_items = session.get('cart', [])
     total = sum(item['price'] * item['quantity'] for item in cart_items)
     for item in cart_items:
@@ -129,6 +151,9 @@ def cart():
 
 @app.route('/update_cart/<int:product_id>', methods=['POST'])
 def update_cart(product_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     action = request.form.get('action')
     cart = session.get('cart', [])
     
@@ -152,6 +177,9 @@ def update_cart(product_id):
 
 @app.route('/update_quantity/<int:product_id>', methods=['POST'])
 def update_quantity(product_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Unauthorized'})
+
     try:
         new_quantity = int(request.form.get('quantity', 1))
         cart = session.get('cart', [])
@@ -176,6 +204,9 @@ def clear_cart():
 
 @app.route('/checkout')
 def checkout():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     cart_items = session.get('cart', [])
     total = sum(item['price'] * item['quantity'] for item in cart_items)
     tax = total * 0.08
@@ -184,6 +215,9 @@ def checkout():
 
 @app.route('/confirmation', methods=['GET', 'POST'])
 def confirmation():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         cart_items = session.get('cart', [])
         total = sum(item['price'] * item['quantity'] for item in cart_items)
@@ -209,28 +243,42 @@ def contact():
 
 @app.route('/submissions')
 def submissions():
+    # Protected: Only for Admins
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+
     all_feedback = Feedback.query.all()
     return render_template('submissions.html', feedbacks=all_feedback)
 
 @app.route('/clear-feedback', methods=['POST'])
 def clear_feedback():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+
     Feedback.query.delete()
     db.session.commit()
-    open('feedback.txt', 'w').close()  # optional text file clear
+    if os.path.exists('feedback.txt'):
+        open('feedback.txt', 'w').close() 
     return redirect(url_for('submissions'))
 
 # ---------------- Authentication ----------------
+
+# 1. CUSTOMER SIGNUP
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
+    if 'user_id' in session:
+        return redirect(url_for('home'))
+
     if request.method == 'POST':
         username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
 
-        existing_user = User.query.filter_by(username=username).first()
+        existing_user = User.query.filter((User.username == username) | (User.email == email)).first()
         if existing_user:
-            return "Username already taken!"
+            return render_template('signup.html', error="Username or Email already taken!")
 
-        new_user = User(username=username)
+        new_user = User(username=username, email=email)
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
@@ -239,84 +287,53 @@ def signup():
 
     return render_template('signup.html')
 
+# 2. CUSTOMER LOGIN
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if 'user_id' in session:
+        return redirect(url_for('home'))
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
-        # Check if admin credentials
-        if username == 'admin' and password == '67sigma':
-            session['is_admin'] = True
-            return redirect(url_for('admin_accounts'))
-
-        # Check regular user
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             session['user_id'] = user.id
+            # SUCCESS: Explicit redirect to home
             return redirect(url_for('home'))
         else:
-            return "Invalid credentials!"
+            return render_template('login.html', error="Invalid Username or Password")
 
     return render_template('login.html')
+
+# 3. ADMIN LOGIN
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if session.get('is_admin'):
+         return "Admin already logged in. Panel pending integration."
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        if username == 'admin' and password == '123':
+            session['is_admin'] = True
+            return "<h2>Admin Login Successful.</h2><p>Waiting for admin panel integration...</p><a href='/admin/logout'>Logout</a>"
+        else:
+            return render_template('admin_login.html', error="Invalid Admin Credentials")
+
+    return render_template('admin_login.html')
 
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
-    return redirect(url_for('home'))
-
-# ---------------- Admin ----------------
-@app.route('/admin/login', methods=['GET', 'POST'])
-def admin_login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        if username == 'admin' and password == '67sigma':
-            session['is_admin'] = True
-            return redirect(url_for('admin_accounts'))
-        else:
-            return "Invalid admin credentials!"
-
-    return render_template('admin_login.html')
-
-@app.route('/admin/accounts', methods=['GET', 'POST'])
-def admin_accounts():
-    if not session.get('is_admin'):
-        return redirect(url_for('admin_login'))
-
-    search_query = request.form.get('search', '')
-
-    if search_query:
-        users = User.query.filter(User.username.contains(search_query)).all()
-    else:
-        users = User.query.all()
-
-    return render_template('admin_accounts.html', users=users, search_query=search_query)
-
-@app.route('/admin/delete/<int:user_id>', methods=['POST'])
-def delete_user(user_id):
-    if not session.get('is_admin'):
-        return redirect(url_for('admin_login'))
-
-    user = User.query.get_or_404(user_id)
-    db.session.delete(user)
-    db.session.commit()
-    return redirect(url_for('admin_accounts'))
-
-@app.route('/admin/clear', methods=['POST'])
-def clear_users():
-    if not session.get('is_admin'):
-        return redirect(url_for('admin_login'))
-
-    User.query.delete()
-    db.session.commit()
-    return redirect(url_for('admin_accounts'))
+    return redirect(url_for('login'))
 
 @app.route('/admin/logout')
 def admin_logout():
     session.pop('is_admin', None)
-    return redirect(url_for('home'))
+    return redirect(url_for('admin_login'))
 
 # ---------------- Run ----------------
 if __name__ == '__main__':

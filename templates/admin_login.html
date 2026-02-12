@@ -1,14 +1,166 @@
 <!DOCTYPE html>
-<html>
-<head><title>Admin Login</title></head>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            /* Darker, more serious gradient for Admin */
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 400px;
+            padding: 50px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 {
+            font-size: 2em;
+            color: #dcdcdc;
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px 0;
+            font-size: 16px;
+            color: #fff;
+            border: none;
+            border-bottom: 1px solid #555;
+            outline: none;
+            background: transparent;
+            transition: 0.3s;
+        }
+
+        .input-group label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 10px 0;
+            font-size: 16px;
+            color: #888;
+            pointer-events: none;
+            transition: 0.5s;
+        }
+
+        .input-group input:focus {
+            border-bottom: 1px solid #00c6ff;
+        }
+
+        .input-group input:focus ~ label,
+        .input-group input:valid ~ label {
+            top: -20px;
+            left: 0;
+            color: #00c6ff;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(to right, #00c6ff, #0072ff);
+            border: none;
+            outline: none;
+            border-radius: 25px;
+            font-size: 16px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 114, 255, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 114, 255, 0.4);
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #888;
+        }
+
+        .footer a {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .footer a:hover {
+            color: #fff;
+        }
+
+        .error-msg {
+            background: rgba(220, 53, 69, 0.2);
+            border: 1px solid rgba(220, 53, 69, 0.4);
+            color: #ffcccc;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
 <body>
-  <h2>Admin Login</h2>
-  <form method="POST">
-    <label>Username</label>
-    <input type="text" name="username" required>
-    <label>Password</label>
-    <input type="password" name="password" required>
-    <button type="submit">Login</button>
-  </form>
+    <div class="container">
+        <h2>Admin Portal</h2>
+        <p class="subtitle">Restricted Access</p>
+        
+        {% if error %}
+            <div class="error-msg">{{ error }}</div>
+        {% endif %}
+        
+        <form method="POST">
+            <div class="input-group">
+                <input type="text" name="username" required>
+                <label>Admin Username</label>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" required>
+                <label>Admin Key</label>
+            </div>
+            <button type="submit">Access Control Panel</button>
+        </form>
+        
+        <div class="footer">
+            <a href="{{ url_for('login') }}">← Back to Store Login</a>
+        </div>
+    </div>
 </body>
 </html>
