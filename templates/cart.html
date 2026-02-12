@@ -468,7 +468,81 @@
     }
         })
     </script>
-    
+    {% extends "base.html" %}
+{% block title %}My Cart{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="cart-header text-center">
+        <h1>Your Shopping Cart</h1>
+        <p class="mb-0">{{ cart|length }} items</p>
+    </div>
+
+    {% if cart %}
+    <div class="row">
+        <div class="col-lg-8">
+            {% for item in cart %}
+            <div class="cart-item animate-up">
+                <img src="{{ url_for('static', filename='images/' ~ item.image) }}" alt="{{ item.title }}">
+                <div class="flex-grow-1">
+                    <h5 class="mb-1">{{ item.title }}</h5>
+                    <p class="text-primary font-weight-bold mb-0">${{ "%.2f"|format(item.price) }}</p>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    <form action="{{ url_for('update_cart', product_id=item.id) }}" method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="decrease">
+                        <button class="btn btn-sm btn-light border">-</button>
+                    </form>
+                    <span class="mx-3 font-weight-bold">{{ item.quantity }}</span>
+                    <form action="{{ url_for('update_cart', product_id=item.id) }}" method="POST" class="d-inline">
+                        <input type="hidden" name="action" value="increase">
+                        <button class="btn btn-sm btn-light border">+</button>
+                    </form>
+                </div>
+
+                <form action="{{ url_for('update_cart', product_id=item.id) }}" method="POST" class="ml-4">
+                    <input type="hidden" name="action" value="remove">
+                    <button class="btn btn-sm text-danger border-0 bg-transparent"><i class="fas fa-trash"></i></button>
+                </form>
+            </div>
+            {% endfor %}
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('all_products') }}" class="btn btn-outline-dark">Continue Shopping</a>
+                <a href="{{ url_for('clear_cart') }}" class="btn btn-outline-danger ml-2">Clear Cart</a>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="cart-summary animate-up">
+                <h4 class="mb-4">Order Summary</h4>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal</span>
+                    <span>${{ "%.2f"|format(total) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Tax (8%)</span>
+                    <span>${{ "%.2f"|format(total * 0.08) }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-4">
+                    <strong>Total</strong>
+                    <strong class="text-primary">${{ "%.2f"|format(total * 1.08) }}</strong>
+                </div>
+                <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-block">Proceed to Checkout</a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5 animate-up">
+        <i class="fas fa-shopping-basket fa-4x text-muted mb-3"></i>
+        <h3>Your cart is empty</h3>
+        <a href="{{ url_for('all_products') }}" class="btn btn-primary mt-3">Start Shopping</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
     <!-- Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
